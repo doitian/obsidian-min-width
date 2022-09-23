@@ -15,15 +15,18 @@ const DEFAULT_SETTINGS: MinWidthPluginSettings = {
 const DATA_VIEW_TYPE = "data-min-width-plugin-view-type";
 const CLASS_ACTIVE = "min-width-plugin-active";
 
-function defaultSetting(setting, defaultValue: string): string {
-	if (setting === undefined || setting === null || setting.trim() === "") {
+function defaultSetting(
+	value: string | undefined | null,
+	defaultValue: string
+): string {
+	if (value === undefined || value === null || value.trim() === "") {
 		return defaultValue;
 	}
-	return setting;
+	return value;
 }
 
-function setOrRemoveDataType(el, dataType) {
-	if (dataType !== undefined) {
+function setOrRemoveDataType(el: HTMLElement, dataType: string | null) {
+	if (dataType !== null) {
 		el.setAttribute(DATA_VIEW_TYPE, dataType);
 	} else {
 		el.removeAttribute(DATA_VIEW_TYPE);
@@ -49,37 +52,41 @@ export default class MinWidthPlugin extends Plugin {
 			this.app.workspace.on("active-leaf-change", (leaf) => {
 				this.removeClasses();
 
+				if (leaf === null) {
+					return;
+				}
+
+				const leafEl = leaf.view.containerEl.parentElement;
+				if (leafEl === null) {
+					return;
+				}
+
 				// bubble up data-type
-				const dataType = leaf.containerEl
-					.getElementsByClassName("workspace-leaf-content")[0]
-					?.getAttribute("data-type");
-				setOrRemoveDataType(leaf.containerEl, dataType);
+				const dataType =
+					leaf.view.containerEl.getAttribute("data-type");
+				setOrRemoveDataType(leafEl, dataType);
 
 				// add active class and data-type to current horizontal split container
-				const parentNode = leaf.containerEl.parentNode;
-				console.log(parentNode);
-				console.log(parentNode.classList);
-				if (parentNode.classList.contains("mod-horizontal")) {
-					parentNode.classList.add(CLASS_ACTIVE);
-					setOrRemoveDataType(parentNode, dataType);
+				const leafParentEl = leafEl.parentElement;
+				if (
+					leafParentEl !== null &&
+					leafParentEl.classList.contains("mod-horizontal")
+				) {
+					leafParentEl.classList.add(CLASS_ACTIVE);
+					setOrRemoveDataType(leafParentEl, dataType);
 				}
 			})
 		);
 	}
 
 	onunload() {
-		console.log("UNLOAD...");
-		console.log(
-			`.mod-horizontal[${DATA_VIEW_TYPE}], .workspace-leaf[${DATA_VIEW_TYPE}]`
-		);
 		this.styleTag.remove();
 		this.removeClasses();
-		for (const el of this.app.workspace.containerEl.querySelectorAll(
-			`.mod-horizontal[${DATA_VIEW_TYPE}], .workspace-leaf[${DATA_VIEW_TYPE}]`
-		)) {
-			console.log(`remove ${DATA_VIEW_TYPE} from ${el}`);
-			el.removeAttribute(DATA_VIEW_TYPE);
-		}
+		this.app.workspace.containerEl
+			.querySelectorAll(
+				`.mod-horizontal[${DATA_VIEW_TYPE}], .workspace-leaf[${DATA_VIEW_TYPE}]`
+			)
+			.forEach((el) => el.removeAttribute(DATA_VIEW_TYPE));
 	}
 
 	async loadSettings() {
@@ -116,16 +123,14 @@ export default class MinWidthPlugin extends Plugin {
 		`
 			.trim()
 			.replace(/[\r\n\s]+/g, " ");
-		console.log(cssStyles);
 		this.styleTag.innerText = cssStyles;
 	}
 
 	removeClasses() {
-		for (const el of this.app.workspace.containerEl.getElementsByClassName(
-			CLASS_ACTIVE
-		)) {
-			el.classList.remove(CLASS_ACTIVE);
-		}
+		const elements = Array.from(
+			this.app.workspace.containerEl.getElementsByClassName(CLASS_ACTIVE)
+		);
+		elements.forEach((el) => el.classList.remove(CLASS_ACTIVE));
 	}
 }
 
