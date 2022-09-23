@@ -52,7 +52,7 @@ jobs:
 
       - name: Package
         run: |
-          export PACKAGE_BASENAME = "${{ github.event.repository.name }}-${{ needs.create-release.outputs.tag }}"
+          export PACKAGE_BASENAME="${{ github.event.repository.name }}-${{ needs.create-release.outputs.tag }}"
           mkdir -p "$PACKAGE_BASENAME"
           cp main.js manifest.json README.md "$PACKAGE_BASENAME"
           zip -r "$PACKAGE_BASENAME.zip" "$PACKAGE_BASENAME"
