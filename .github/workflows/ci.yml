@@ -1,0 +1,27 @@
+name: CI
+on:
+  push: {}
+  pull_request: {}
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "14.x"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Build
+        run: |
+          npm install
+          npm run build --if-present
+
+      - name: Lint
+        run: |
+          npx eslint main.ts
