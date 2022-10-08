@@ -1,4 +1,10 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import {
+	App,
+	Plugin,
+	PluginSettingTab,
+	Setting,
+	WorkspaceLeaf,
+} from "obsidian";
 
 interface MinWidthPluginSettings {
 	maxWidthPercent: string;
@@ -33,6 +39,20 @@ function setOrRemoveDataType(el: HTMLElement, dataType: string | null) {
 	}
 }
 
+function debounce(func: (...args: any[]) => void, wait: number) {
+	let timeout: number | undefined = undefined;
+	return (...args: any[]) => {
+		const later = () => {
+			console.log("fire");
+			timeout = undefined;
+			func(...args);
+		};
+		console.log("schedule");
+		window.clearTimeout(timeout);
+		timeout = window.setTimeout(later, wait);
+	};
+}
+
 export default class MinWidthPlugin extends Plugin {
 	settings: MinWidthPluginSettings;
 	styleTag: HTMLStyleElement;
@@ -49,34 +69,40 @@ export default class MinWidthPlugin extends Plugin {
 		this.addSettingTab(new MinWidthSettingTab(this.app, this));
 
 		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", (leaf) => {
-				this.removeClasses();
-
-				if (leaf === null) {
-					return;
-				}
-
-				const leafEl = leaf.view.containerEl.parentElement;
-				if (leafEl === null) {
-					return;
-				}
-
-				// bubble up data-type
-				const dataType =
-					leaf.view.containerEl.getAttribute("data-type");
-				setOrRemoveDataType(leafEl, dataType);
-
-				// add active class and data-type to current horizontal split container
-				const leafParentEl = leafEl.parentElement;
-				if (
-					leafParentEl !== null &&
-					leafParentEl.classList.contains("mod-horizontal")
-				) {
-					leafParentEl.classList.add(CLASS_ACTIVE);
-					setOrRemoveDataType(leafParentEl, dataType);
-				}
-			})
+			this.app.workspace.on(
+				"active-leaf-change",
+				debounce((leaf) => this.onActiveLeafChange(leaf), 200)
+			)
 		);
+	}
+
+	onActiveLeafChange(leaf: WorkspaceLeaf) {
+		this.removeClasses();
+
+		if (leaf === null) {
+			return;
+		}
+
+		const leafEl = leaf.view.containerEl.parentElement;
+		if (leafEl === null) {
+			return;
+		}
+
+		leafEl.classList.add(CLASS_ACTIVE);
+
+		// bubble up data-type
+		const dataType = leaf.view.containerEl.getAttribute("data-type");
+		setOrRemoveDataType(leafEl, dataType);
+
+		// add active class and data-type to current horizontal split container
+		const leafParentEl = leafEl.parentElement;
+		if (
+			leafParentEl !== null &&
+			leafParentEl.classList.contains("mod-horizontal")
+		) {
+			leafParentEl.classList.add(CLASS_ACTIVE);
+			setOrRemoveDataType(leafParentEl, dataType);
+		}
 	}
 
 	onunload() {
@@ -106,14 +132,12 @@ export default class MinWidthPlugin extends Plugin {
 		const { maxWidthPercent, defaultMinWidth, minWidthOfViewType } =
 			this.settings;
 		const cssStyles = `
-			.mod-root .mod-active,
 			.mod-root .${CLASS_ACTIVE} {
 				min-width: min(${maxWidthPercent}, ${defaultMinWidth});
 			}
 			${Object.entries(minWidthOfViewType)
 				.map(
 					([viewType, minWidth]) => `
-			.mod-root .mod-active[${DATA_VIEW_TYPE}="${viewType}"],
 			.mod-root .${CLASS_ACTIVE}[${DATA_VIEW_TYPE}="${viewType}"] {
 				min-width: min(${maxWidthPercent}, ${minWidth});
 			}
