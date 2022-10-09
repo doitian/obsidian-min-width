@@ -43,11 +43,9 @@ function debounce(func: (...args: any[]) => void, wait: number) {
 	let timeout: number | undefined = undefined;
 	return (...args: any[]) => {
 		const later = () => {
-			console.log("fire");
 			timeout = undefined;
 			func(...args);
 		};
-		console.log("schedule");
 		window.clearTimeout(timeout);
 		timeout = window.setTimeout(later, wait);
 	};
