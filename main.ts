@@ -56,8 +56,6 @@ export default class MinWidthPlugin extends Plugin {
 	}
 
 	onActiveLeafChange(leaf: WorkspaceLeaf | null) {
-		this.removeClasses();
-
 		if (leaf === null) {
 			return;
 		}
@@ -67,10 +65,11 @@ export default class MinWidthPlugin extends Plugin {
 			return;
 		}
 
+		this.removeClassesFrom(leafEl.doc.body);
 		leafEl.addClass(CLASS_ACTIVE);
 
 		// bubble up data-type
-		const dataType = leaf.view.containerEl.getAttr("data-type");
+		const dataType = leaf.view.containerEl.getAttribute("data-type");
 		leafEl.setAttr(DATA_VIEW_TYPE, dataType);
 
 		// add active class and data-type to current horizontal split container
@@ -82,9 +81,13 @@ export default class MinWidthPlugin extends Plugin {
 	}
 
 	onunload() {
+		// Empty first to clear the styles in popout windows
+		this.styleTag.innerText = "";
 		this.styleTag.remove();
-		this.removeClasses();
-		this.app.workspace.containerEl
+
+		// Leave the classes and attributes in the popout windows, because I don't know to to remove them.
+		this.removeClassesFrom(window.activeDocument.body);
+		window.activeDocument.body
 			.findAll(
 				`.mod-horizontal[${DATA_VIEW_TYPE}], .workspace-leaf[${DATA_VIEW_TYPE}]`
 			)
@@ -126,8 +129,8 @@ export default class MinWidthPlugin extends Plugin {
 		this.styleTag.innerText = cssStyles;
 	}
 
-	removeClasses() {
-		this.app.workspace.containerEl
+	removeClassesFrom(rootEl: HTMLElement) {
+		rootEl
 			.findAll(`.${CLASS_ACTIVE}`)
 			.forEach((el) => el.removeClass(CLASS_ACTIVE));
 	}
