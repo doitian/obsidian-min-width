@@ -4,6 +4,7 @@ import {
 	PluginSettingTab,
 	Setting,
 	WorkspaceLeaf,
+	debounce,
 } from "obsidian";
 
 interface MinWidthPluginSettings {
@@ -39,18 +40,6 @@ function setOrRemoveDataType(el: HTMLElement, dataType: string | null) {
 	}
 }
 
-function debounce(func: (...args: any[]) => void, wait: number) {
-	let timeout: number | undefined = undefined;
-	return (...args: any[]) => {
-		const later = () => {
-			timeout = undefined;
-			func(...args);
-		};
-		window.clearTimeout(timeout);
-		timeout = window.setTimeout(later, wait);
-	};
-}
-
 export default class MinWidthPlugin extends Plugin {
 	settings: MinWidthPluginSettings;
 	styleTag: HTMLStyleElement;
@@ -74,7 +63,7 @@ export default class MinWidthPlugin extends Plugin {
 		);
 	}
 
-	onActiveLeafChange(leaf: WorkspaceLeaf) {
+	onActiveLeafChange(leaf: WorkspaceLeaf | null) {
 		this.removeClasses();
 
 		if (leaf === null) {
