@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-min-width",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Set the Minimum Width of the Active Pane in Obsidian",
 	"main": "main.js",
 	"scripts": {
