@@ -32,14 +32,6 @@ function defaultSetting(
 	return value;
 }
 
-function setOrRemoveDataType(el: HTMLElement, dataType: string | null) {
-	if (dataType !== null) {
-		el.setAttribute(DATA_VIEW_TYPE, dataType);
-	} else {
-		el.removeAttribute(DATA_VIEW_TYPE);
-	}
-}
-
 export default class MinWidthPlugin extends Plugin {
 	settings: MinWidthPluginSettings;
 	styleTag: HTMLStyleElement;
@@ -47,10 +39,10 @@ export default class MinWidthPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.styleTag = document.createElement("style");
+		const head = window.activeDocument.head;
+		this.styleTag = head.createEl("style");
 		this.styleTag.id = "min-width-plugin-style";
 		this.injectStyles();
-		document.getElementsByTagName("head")[0].appendChild(this.styleTag);
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new MinWidthSettingTab(this.app, this));
@@ -75,20 +67,17 @@ export default class MinWidthPlugin extends Plugin {
 			return;
 		}
 
-		leafEl.classList.add(CLASS_ACTIVE);
+		leafEl.addClass(CLASS_ACTIVE);
 
 		// bubble up data-type
-		const dataType = leaf.view.containerEl.getAttribute("data-type");
-		setOrRemoveDataType(leafEl, dataType);
+		const dataType = leaf.view.containerEl.getAttr("data-type");
+		leafEl.setAttr(DATA_VIEW_TYPE, dataType);
 
 		// add active class and data-type to current horizontal split container
 		const leafParentEl = leafEl.parentElement;
-		if (
-			leafParentEl !== null &&
-			leafParentEl.classList.contains("mod-horizontal")
-		) {
-			leafParentEl.classList.add(CLASS_ACTIVE);
-			setOrRemoveDataType(leafParentEl, dataType);
+		if (leafParentEl !== null && leafParentEl.hasClass("mod-horizontal")) {
+			leafParentEl.addClass(CLASS_ACTIVE);
+			leafParentEl.setAttr(DATA_VIEW_TYPE, dataType);
 		}
 	}
 
@@ -96,10 +85,10 @@ export default class MinWidthPlugin extends Plugin {
 		this.styleTag.remove();
 		this.removeClasses();
 		this.app.workspace.containerEl
-			.querySelectorAll(
+			.findAll(
 				`.mod-horizontal[${DATA_VIEW_TYPE}], .workspace-leaf[${DATA_VIEW_TYPE}]`
 			)
-			.forEach((el) => el.removeAttribute(DATA_VIEW_TYPE));
+			.forEach((el) => el.setAttr(DATA_VIEW_TYPE, null));
 	}
 
 	async loadSettings() {
@@ -138,10 +127,9 @@ export default class MinWidthPlugin extends Plugin {
 	}
 
 	removeClasses() {
-		const elements = Array.from(
-			this.app.workspace.containerEl.getElementsByClassName(CLASS_ACTIVE)
-		);
-		elements.forEach((el) => el.classList.remove(CLASS_ACTIVE));
+		this.app.workspace.containerEl
+			.findAll(`.${CLASS_ACTIVE}`)
+			.forEach((el) => el.removeClass(CLASS_ACTIVE));
 	}
 }
 
