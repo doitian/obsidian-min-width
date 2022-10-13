@@ -32,6 +32,20 @@ function defaultSetting(
 	return value;
 }
 
+// Finds the ancestor which can be resized horizontally.
+function findResizeEl(el: HTMLElement): HTMLElement {
+	// Since v0.16.0, the leaf is wrapped inside .workspace-tabs
+	const parent = el.parentElement;
+	if (parent !== null && parent.hasClass("workspace-tab-container")) {
+		const grandParent = parent.parentElement;
+		if (grandParent !== null && grandParent.hasClass("workspace-tabs")) {
+			return grandParent;
+		}
+	}
+
+	return el;
+}
+
 export default class MinWidthPlugin extends Plugin {
 	settings: MinWidthPluginSettings;
 	styleTag: HTMLStyleElement;
@@ -66,17 +80,22 @@ export default class MinWidthPlugin extends Plugin {
 		}
 
 		this.removeClassesFrom(leafEl.doc.body);
-		leafEl.addClass(CLASS_ACTIVE);
+
+		const resizeEl = findResizeEl(leafEl);
+		resizeEl.addClass(CLASS_ACTIVE);
 
 		// bubble up data-type
 		const dataType = leaf.view.containerEl.getAttribute("data-type");
-		leafEl.setAttr(DATA_VIEW_TYPE, dataType);
+		resizeEl.setAttr(DATA_VIEW_TYPE, dataType);
 
 		// add active class and data-type to current horizontal split container
-		const leafParentEl = leafEl.parentElement;
-		if (leafParentEl !== null && leafParentEl.hasClass("mod-horizontal")) {
-			leafParentEl.addClass(CLASS_ACTIVE);
-			leafParentEl.setAttr(DATA_VIEW_TYPE, dataType);
+		const resizeParentEl = resizeEl.parentElement;
+		if (
+			resizeParentEl !== null &&
+			resizeParentEl.hasClass("mod-horizontal")
+		) {
+			resizeParentEl.addClass(CLASS_ACTIVE);
+			resizeParentEl.setAttr(DATA_VIEW_TYPE, dataType);
 		}
 	}
 
