@@ -64,7 +64,7 @@ export default class MinWidthPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on(
 				"active-leaf-change",
-				debounce((leaf) => this.onActiveLeafChange(leaf), 200)
+				debounce((leaf) => this.onActiveLeafChange(leaf), 120)
 			)
 		);
 	}
